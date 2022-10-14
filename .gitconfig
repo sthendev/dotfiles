@@ -1,0 +1,5 @@
+[user]
+	email = sthendev@gmail.com
+	name = sthen
+[pull]
+	rebase = false
