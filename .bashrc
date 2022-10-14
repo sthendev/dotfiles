@@ -16,3 +16,7 @@ fi
 if [ -f "$HOME/.bash_functions" ]; then
 	source $HOME/.bash_functions
 fi
+
+if [ -f "$HOME/.bash_prompt" ]; then
+	source $HOME/.bash_prompt
+fi
