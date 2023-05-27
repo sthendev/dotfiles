@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+    if [[ -n "$PS1" \
+       && ! "$TERM" =~ 'screen' \
+       && ! "$TERM" =~ 'tmux' \
+       && -z "$TMUX" \
+       && -t 1 \
+       && ! "$TERM_PROGRAM" =~ 'vscode' ]]
+    then
+        exec tmux new-session -A -s main
+    fi
+fi
