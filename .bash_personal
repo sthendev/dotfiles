@@ -1,14 +1,10 @@
 #!/bin/bash
 
-function source_if_exists()
-{
-    if [ -f "$1" ]; then
-        source "$1"
-    fi
-}
+if [ -f ~/.bash_functions ]; then
+    source ~/.bash_functions
+fi
 
 source_if_exists ~/.bash_env
-source_if_exists ~/.bash_functions
 source_if_exists ~/.bash_completion
 source_if_exists ~/.bash_prompt
 source_if_exists ~/.bash_alias
