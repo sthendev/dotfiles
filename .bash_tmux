@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$WSL_DISTRO_NAME" ]]; then
     if [[ -n "$PS1" \
        && ! "$TERM" =~ 'screen' \
        && ! "$TERM" =~ 'tmux' \
