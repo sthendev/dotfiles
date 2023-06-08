@@ -61,12 +61,6 @@ function format-tmux-window()
     if [[ $FLAGS =~ 'Z' ]]; then
         PRE="${PRE}[ "
         POST=" ]${POST}"
-    elif [[ $FLAGS =~ 'M' ]]; then
-        PRE="${PRE}^ "
-        POST="  ${POST}"
-    elif [[ $FLAGS =~ '-' ]]; then
-        PRE="${PRE}- "
-        POST="  ${POST}"
     else
         PRE="${PRE}  "
         POST="  ${POST}"
