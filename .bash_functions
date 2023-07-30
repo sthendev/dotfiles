@@ -18,9 +18,14 @@ function background()
     "$@" 2>&1 > /dev/null &
 }
 
-function cmake-config()
+function cmake-config-release()
 {
     cmake -S. -Bbuild "$@"
+}
+
+function cmake-config-debug()
+{
+    cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "$@"
 }
 
 function cmake-build()
