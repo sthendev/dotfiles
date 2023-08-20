@@ -6,3 +6,5 @@ fi
 
 export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 export EDITOR="nvim"
+export HISTSIZE=50000
+export HISTFILESIZE=50000
