@@ -36,18 +36,14 @@ function cmake-build()
 function cmake-test()
 {
     verbose=0
-    while getopts v flag
-    do
-        case  "${flag}" in
-            v) verbose=1;;
-        esac
-    done
-    shift $((OPTIND - 1))
+    if [[ "$1" == "-v" ]]; then
+        verbose=1; shift
+    fi
 
     extra_args=()
     (( verbose == 1 )) && extra_args+=('--rerun-failed' '--output-on-failure')
 
-    ctest --test-dir build "${extra_args[@]}" "$@"
+    ctest --test-dir build "$@" "${extra_args[@]}"
 }
 
 function cmake-run()
