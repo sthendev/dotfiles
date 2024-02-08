@@ -1,11 +1,29 @@
 #!/bin/bash
 
+function format-tmux-window()
+{
+    IFS=':' read -r INDEX NAME FLAGS <<< "$1"
+
+    PRE='['
+    POST=']'
+
+    if [[ $FLAGS =~ 'Z' ]]; then
+        PRE="${PRE}[ "
+        POST=" ]${POST}"
+    else
+        PRE="${PRE}  "
+        POST="  ${POST}"
+    fi
+
+    echo "${PRE}${INDEX}:${NAME}${POST}"
+}
+
 if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$WSL_DISTRO_NAME" ]]; then
     if [[ -n "$PS1" \
-       && ! "$TERM" =~ 'screen' \
-       && ! "$TERM" =~ 'tmux' \
        && -z "$TMUX" \
        && -t 1 \
+       && ! "$TERM" =~ 'screen' \
+       && ! "$TERM" =~ 'tmux' \
        && ! "$TERM_PROGRAM" =~ 'vscode' ]]
     then
         exec tmux new-session -A -s main
