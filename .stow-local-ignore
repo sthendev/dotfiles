@@ -2,5 +2,6 @@
 \.git
 \.gitignore
 
-# other config files
+# other
 windows-terminal-settings.json
+README.md
