@@ -18,14 +18,12 @@ function format-tmux-window()
     echo "${PRE}${INDEX}:${NAME}${POST}"
 }
 
-if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$WSL_DISTRO_NAME" ]]; then
-    if [[ -n "$PS1" \
-       && -z "$TMUX" \
-       && -t 1 \
-       && ! "$TERM" =~ 'screen' \
-       && ! "$TERM" =~ 'tmux' \
-       && ! "$TERM_PROGRAM" =~ 'vscode' ]]
-    then
-        exec tmux new-session -A -s main
-    fi
+if [[ -n "$PS1" \
+   && -z "$TMUX" \
+   && -t 1 \
+   && ! "$TERM" =~ 'screen' \
+   && ! "$TERM" =~ 'tmux' \
+   && ! "$TERM_PROGRAM" =~ 'vscode' ]]
+then
+    exec tmux new-session -A -s main
 fi

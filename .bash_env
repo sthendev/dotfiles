@@ -4,8 +4,8 @@ if [ -n "$SSH_CLIENT" ]; then
     export DISPLAY=10.0.2.2:0.0
 fi
 
-export PATH="$HOME/bin:$HOME/.local/bin:$HOME/.codon/bin:$HOME/.modular/pkg/packages.modular.com_mojo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+
 export EDITOR="nvim"
 export HISTSIZE=50000
 export HISTFILESIZE=50000
-export MODULAR_HOME="$HOME/.modular"

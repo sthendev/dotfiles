@@ -7,3 +7,6 @@ alias cd3='cd ../../..'
 alias cd3='cd ../../..'
 alias cd4='cd ../../../..'
 alias cd5='cd ../../../../..'
+
+alias ll='ls -l --color=auto'
+alias ls='ls --color=auto'
