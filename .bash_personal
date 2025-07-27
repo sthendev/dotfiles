@@ -6,7 +6,7 @@ if [ -n "$SSH_CLIENT" ]; then
     export DISPLAY=10.0.2.2:0.0
 fi
 
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.bin:$HOME/.local/bin:$PATH"
 
 export EDITOR="nvim"
 export HISTSIZE=50000
@@ -47,24 +47,6 @@ alias ll='ls -l --color=auto'
 alias ls='ls --color=auto'
 
 # == TMUX ==================================================================== #
-
-function format-tmux-window()
-{
-    IFS=':' read -r INDEX NAME FLAGS <<< "$1"
-
-    PRE='['
-    POST=']'
-
-    if [[ $FLAGS =~ 'Z' ]]; then
-        PRE="${PRE}[ "
-        POST=" ]${POST}"
-    else
-        PRE="${PRE}  "
-        POST="  ${POST}"
-    fi
-
-    echo "${PRE}${INDEX}:${NAME}${POST}"
-}
 
 if [[ -n "$(command -v tmux)" \
    && -n "$PS1" \

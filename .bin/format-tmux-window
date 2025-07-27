@@ -1,0 +1,16 @@
+#!/bin/bash
+
+IFS=':' read -r INDEX NAME FLAGS <<< "$1"
+
+PRE='['
+POST=']'
+
+if [[ $FLAGS =~ 'Z' ]]; then
+    PRE="${PRE}[ "
+    POST=" ]${POST}"
+else
+    PRE="${PRE}  "
+    POST="  ${POST}"
+fi
+
+echo "${PRE}${INDEX}:${NAME}${POST}"
