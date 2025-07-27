@@ -68,10 +68,22 @@ fi
 # == FUNCTIONS =============================================================== #
 
 function build() {
+    if [ -z "$BUILD" ]; then
+        echo "ERROR: $$BUILD not defined."
+        return 1
+    fi
+
+    echo "COMMAND:" "$BUILD"
     eval "$BUILD"
 }
 
 function run() {
+    if [ -z "$RUN" ]; then
+        echo "ERROR: $$RUN not defined."
+        return 1
+    fi
+
+    echo "COMMAND:" "$RUN"
     eval "$RUN"
 }
 
