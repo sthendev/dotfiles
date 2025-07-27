@@ -69,7 +69,7 @@ fi
 
 function build() {
     if [ -z "$BUILD" ]; then
-        echo "ERROR: $$BUILD not defined."
+        echo "ERROR: \$BUILD not defined."
         return 1
     fi
 
@@ -79,7 +79,7 @@ function build() {
 
 function run() {
     if [ -z "$RUN" ]; then
-        echo "ERROR: $$RUN not defined."
+        echo "ERROR: \$RUN not defined."
         return 1
     fi
 
