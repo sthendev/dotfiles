@@ -65,4 +65,14 @@ if [[ -n "$(command -v direnv)" ]]; then
     eval "$(direnv hook bash)"
 fi
 
+# == FUNCTIONS =============================================================== #
+
+function build() {
+    eval "$BUILD"
+}
+
+function run() {
+    eval "$RUN"
+}
+
 # ============================================================================ #
