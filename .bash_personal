@@ -68,23 +68,45 @@ fi
 # == FUNCTIONS =============================================================== #
 
 function build() {
-    if [ -z "$BUILD" ]; then
-        echo "ERROR: \$BUILD not defined."
+    build_var=""
+    if [ "$#" -eq 0 ]; then
+        build_var="BUILD"
+    elif [ -n "$1" ]; then
+        build_var="BUILD_$1"
+    else
+        echo "usage: build [target]"
         return 1
     fi
 
-    echo "COMMAND:" "$BUILD"
-    eval "$BUILD"
+    if [ -z "${!build_var}" ]; then
+        echo "ERROR: \$$build_var is not defined"
+        return 1
+    fi
+
+    cmd="${!build_var}"
+    echo "COMMAND: $cmd"
+    eval "$cmd"
 }
 
 function run() {
-    if [ -z "$RUN" ]; then
-        echo "ERROR: \$RUN not defined."
+    build_var=""
+    if [ "$#" -eq 0 ]; then
+        run_var="RUN"
+    elif [ -n "$1" ]; then
+        run_var="RUN_$1"
+    else
+        echo "usage: run [target]"
         return 1
     fi
 
-    echo "COMMAND:" "$RUN"
-    eval "$RUN"
+    if [ -z "${!run_var}" ]; then
+        echo "ERROR: \$$run_var is not defined"
+        return 1
+    fi
+
+    cmd="${!run_var}"
+    echo "COMMAND: $cmd"
+    eval "$cmd"
 }
 
 # ============================================================================ #
