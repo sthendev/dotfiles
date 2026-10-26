@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+
+# Codex passes hook payloads on stdin and notify payloads as the final argument.
+# Their contents are intentionally unused: the inherited TMUX_PANE identifies
+# the Codex window. Modes map lifecycle events to explicit status markers.
+
+working='󰑮'
+bell=''
+idle='󰒲'
+suppress_option='@codex_suppress_next_notify'
+original_name_option='@codex_original_window_name'
+automatic_rename_option='@codex_original_automatic_rename'
+allow_rename_option='@codex_original_allow_rename'
+mode=${1:---notify}
+
+# Stop hooks require valid JSON on stdout. Other modes should remain silent.
+finish() {
+    [[ $mode == --stop ]] && printf '{}\n'
+    exit 0
+}
+
+command -v tmux >/dev/null 2>&1 || finish
+[[ -n ${TMUX:-} && -n ${TMUX_PANE:-} ]] || finish
+
+if ! window_name=$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}' 2>/dev/null); then
+    finish
+fi
+
+set_marker() {
+    local marker=$1
+    local original_name automatic_rename allow_rename
+
+    if ! original_name=$(tmux show-options -w -v -t "$TMUX_PANE" "$original_name_option" 2>/dev/null); then
+        # Also migrate markers left by earlier versions.
+        case $window_name in
+            "$working "*) original_name=${window_name#"$working "} ;;
+            *" $working") original_name=${window_name%" $working"} ;;
+            "$bell "*) original_name=${window_name#"$bell "} ;;
+            *" $bell") original_name=${window_name%" $bell"} ;;
+            "$idle "*) original_name=${window_name#"$idle "} ;;
+            *" $idle") original_name=${window_name%" $idle"} ;;
+            *) original_name=$window_name ;;
+        esac
+
+        automatic_rename=$(tmux show-options -w -v -t "$TMUX_PANE" automatic-rename 2>/dev/null) || automatic_rename=off
+        tmux set-option -w -t "$TMUX_PANE" "$original_name_option" "$original_name" 2>/dev/null || return
+        tmux set-option -w -t "$TMUX_PANE" "$automatic_rename_option" "$automatic_rename" 2>/dev/null || true
+    fi
+
+    # Programs can also rename a tmux window via terminal title escapes. Save
+    # and disable that independent path while a Codex marker is present.
+    if ! allow_rename=$(tmux show-options -w -v -t "$TMUX_PANE" "$allow_rename_option" 2>/dev/null); then
+        allow_rename=$(tmux show-options -w -A -v -t "$TMUX_PANE" allow-rename 2>/dev/null) || allow_rename=on
+        tmux set-option -w -t "$TMUX_PANE" "$allow_rename_option" "$allow_rename" 2>/dev/null || true
+    fi
+    tmux set-option -w -t "$TMUX_PANE" allow-rename off 2>/dev/null || true
+
+    [[ $window_name == "$original_name $marker" ]] && return
+    tmux rename-window -t "$TMUX_PANE" "$original_name $marker" 2>/dev/null || true
+}
+
+remove_marker() {
+    local original_name automatic_rename allow_rename
+
+    if ! original_name=$(tmux show-options -w -v -t "$TMUX_PANE" "$original_name_option" 2>/dev/null); then
+        # Fallbacks clean up markers created before original-name tracking.
+        case $window_name in
+            "$working "*) original_name=${window_name#"$working "} ;;
+            *" $working") original_name=${window_name%" $working"} ;;
+            "$bell "*) original_name=${window_name#"$bell "} ;;
+            *" $bell") original_name=${window_name%" $bell"} ;;
+            "$idle "*) original_name=${window_name#"$idle "} ;;
+            *" $idle") original_name=${window_name%" $idle"} ;;
+            *) return ;;
+        esac
+    fi
+
+    automatic_rename=$(tmux show-options -w -v -t "$TMUX_PANE" "$automatic_rename_option" 2>/dev/null) || automatic_rename=''
+    allow_rename=$(tmux show-options -w -v -t "$TMUX_PANE" "$allow_rename_option" 2>/dev/null) || allow_rename=''
+    tmux rename-window -t "$TMUX_PANE" "$original_name" 2>/dev/null || true
+    tmux set-option -w -u -t "$TMUX_PANE" "$original_name_option" 2>/dev/null || true
+    tmux set-option -w -u -t "$TMUX_PANE" "$automatic_rename_option" 2>/dev/null || true
+    tmux set-option -w -u -t "$TMUX_PANE" "$allow_rename_option" 2>/dev/null || true
+
+    # Restore both ways tmux may normally keep the window name up to date.
+    [[ -n $automatic_rename ]] && tmux set-option -w -t "$TMUX_PANE" automatic-rename "$automatic_rename" 2>/dev/null || true
+    [[ -n $allow_rename ]] && tmux set-option -w -t "$TMUX_PANE" allow-rename "$allow_rename" 2>/dev/null || true
+}
+
+clear_notify_suppression() {
+    tmux set-option -p -u -t "$TMUX_PANE" "$suppress_option" 2>/dev/null || true
+}
+
+case $mode in
+    --clear|--working)
+        # UserPromptSubmit: Codex has started working on the new turn.
+        set_marker "$working"
+        clear_notify_suppression
+        ;;
+    --permission-request)
+        # PermissionRequest: Codex is waiting for an approval decision.
+        clear_notify_suppression
+        set_marker "$bell"
+        ;;
+    --stop|--idle)
+        # Stop: Codex is idle. The completion notify keeps the same state.
+        set_marker "$idle"
+        clear_notify_suppression
+        ;;
+    --reset)
+        remove_marker
+        clear_notify_suppression
+        ;;
+    *)
+        # notify: Codex has completed a turn and is idle.
+        set_marker "$idle"
+        clear_notify_suppression
+        ;;
+esac
+
+finish
