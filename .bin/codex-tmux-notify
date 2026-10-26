@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # Codex passes hook payloads on stdin and notify payloads as the final argument.
-# Their contents are intentionally unused: the inherited TMUX_PANE identifies
-# the Codex window. Modes map lifecycle events to explicit status markers.
+# Use the session id to route existing shared-server sessions. Only trust an
+# inherited TMUX_PANE when the hook actually descends from that pane's process:
+# a shared Codex daemon can retain another terminal's environment indefinitely.
 
 working='󰑮'
 bell=''
@@ -11,6 +12,7 @@ suppress_option='@codex_suppress_next_notify'
 original_name_option='@codex_original_window_name'
 automatic_rename_option='@codex_original_automatic_rename'
 allow_rename_option='@codex_original_allow_rename'
+session_option='@codex_session_id'
 mode=${1:---notify}
 
 # Stop hooks require valid JSON on stdout. Other modes should remain silent.
@@ -21,6 +23,56 @@ finish() {
 
 command -v tmux >/dev/null 2>&1 || finish
 [[ -n ${TMUX:-} && -n ${TMUX_PANE:-} ]] || finish
+
+# Hooks receive JSON on stdin; legacy notify receives it as the final argument.
+payload=''
+case $mode in
+    --notify) [[ $# -gt 1 ]] && payload=${!#} ;;
+    *) [[ ! -t 0 ]] && payload=$(cat) ;;
+esac
+session_id=''
+if [[ -n $payload ]]; then
+    command -v jq >/dev/null 2>&1 || finish
+    session_id=$(printf '%s' "$payload" | jq -er '.session_id // .["thread-id"] // empty | strings' 2>/dev/null) || finish
+fi
+
+resolve_pane() {
+    local pane session matched='' count=0 ancestor parent pane_pid
+
+    if [[ -n $session_id ]]; then
+        while read -r pane session; do
+            if [[ $session == "$session_id" ]]; then
+                matched=$pane
+                ((count += 1))
+            fi
+        done < <(tmux list-panes -a -F "#{pane_id} #{$session_option}" 2>/dev/null)
+        if [[ $count -gt 0 ]]; then
+            [[ $count -eq 1 ]] || return 1
+            TMUX_PANE=$matched
+            return 0
+        fi
+    fi
+
+    # A per-terminal Codex process is a descendant of pane_pid. A shared daemon
+    # is not, even if it happens to have inherited the same TMUX_PANE value.
+    pane_pid=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_pid}' 2>/dev/null) || return 1
+    ancestor=$PPID
+    while [[ $ancestor =~ ^[0-9]+$ && $ancestor -gt 1 ]]; do
+        if [[ $ancestor == "$pane_pid" ]]; then
+            if [[ -n $session_id ]]; then
+                tmux set-option -p -t "$TMUX_PANE" "$session_option" "$session_id" 2>/dev/null || return 1
+            fi
+            return 0
+        fi
+        parent=$(ps -o ppid= -p "$ancestor" 2>/dev/null) || return 1
+        parent=${parent//[[:space:]]/}
+        [[ $parent != "$ancestor" ]] || return 1
+        ancestor=$parent
+    done
+    return 1
+}
+
+resolve_pane || finish
 
 if ! window_name=$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}' 2>/dev/null); then
     finish
@@ -110,6 +162,7 @@ case $mode in
     --reset)
         remove_marker
         clear_notify_suppression
+        tmux set-option -p -u -t "$TMUX_PANE" "$session_option" 2>/dev/null || true
         ;;
     *)
         # notify: Codex has completed a turn and is idle.
