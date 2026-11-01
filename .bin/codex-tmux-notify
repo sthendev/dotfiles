@@ -94,7 +94,9 @@ set_marker() {
             *) original_name=$window_name ;;
         esac
 
-        automatic_rename=$(tmux show-options -w -v -t "$TMUX_PANE" automatic-rename 2>/dev/null) || automatic_rename=off
+        # An empty local value means the option is inherited. Keep that state
+        # so reset can unset our override instead of freezing the window name.
+        automatic_rename=$(tmux show-options -w -v -t "$TMUX_PANE" automatic-rename 2>/dev/null) || automatic_rename=''
         tmux set-option -w -t "$TMUX_PANE" "$original_name_option" "$original_name" 2>/dev/null || return
         tmux set-option -w -t "$TMUX_PANE" "$automatic_rename_option" "$automatic_rename" 2>/dev/null || true
     fi
@@ -102,7 +104,7 @@ set_marker() {
     # Programs can also rename a tmux window via terminal title escapes. Save
     # and disable that independent path while a Codex marker is present.
     if ! allow_rename=$(tmux show-options -w -v -t "$TMUX_PANE" "$allow_rename_option" 2>/dev/null); then
-        allow_rename=$(tmux show-options -w -A -v -t "$TMUX_PANE" allow-rename 2>/dev/null) || allow_rename=on
+        allow_rename=$(tmux show-options -w -v -t "$TMUX_PANE" allow-rename 2>/dev/null) || allow_rename=''
         tmux set-option -w -t "$TMUX_PANE" "$allow_rename_option" "$allow_rename" 2>/dev/null || true
     fi
     tmux set-option -w -t "$TMUX_PANE" allow-rename off 2>/dev/null || true
@@ -135,8 +137,16 @@ remove_marker() {
     tmux set-option -w -u -t "$TMUX_PANE" "$allow_rename_option" 2>/dev/null || true
 
     # Restore both ways tmux may normally keep the window name up to date.
-    [[ -n $automatic_rename ]] && tmux set-option -w -t "$TMUX_PANE" automatic-rename "$automatic_rename" 2>/dev/null || true
-    [[ -n $allow_rename ]] && tmux set-option -w -t "$TMUX_PANE" allow-rename "$allow_rename" 2>/dev/null || true
+    if [[ -n $automatic_rename ]]; then
+        tmux set-option -w -t "$TMUX_PANE" automatic-rename "$automatic_rename" 2>/dev/null || true
+    else
+        tmux set-option -w -u -t "$TMUX_PANE" automatic-rename 2>/dev/null || true
+    fi
+    if [[ -n $allow_rename ]]; then
+        tmux set-option -w -t "$TMUX_PANE" allow-rename "$allow_rename" 2>/dev/null || true
+    else
+        tmux set-option -w -u -t "$TMUX_PANE" allow-rename 2>/dev/null || true
+    fi
 }
 
 clear_notify_suppression() {
@@ -144,6 +154,11 @@ clear_notify_suppression() {
 }
 
 case $mode in
+    --prepare)
+        # The shell wrapper runs before the Codex process can change the name.
+        set_marker "$idle"
+        clear_notify_suppression
+        ;;
     --clear|--working)
         # UserPromptSubmit: Codex has started working on the new turn.
         set_marker "$working"

@@ -48,6 +48,14 @@ alias ls='ls --color=auto'
 
 # == TMUX ==================================================================== #
 
+# Capture the window name before tmux sees the Codex process. The subshell keeps
+# the exit trap local and restores the name even if SessionEnd is not delivered.
+function codex() (
+    trap '"$HOME/.bin/codex-tmux-notify" --reset </dev/null' EXIT
+    "$HOME/.bin/codex-tmux-notify" --prepare </dev/null
+    command codex "$@"
+)
+
 if [[ -n "$(command -v tmux)" \
    && -n "$PS1" \
    && -z "$TMUX" \
