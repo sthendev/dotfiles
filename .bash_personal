@@ -46,6 +46,14 @@ alias cd5='cd ../../../../..'
 alias ll='ls -l --color=auto'
 alias ls='ls --color=auto'
 
+alias gs='git status'
+alias gp='git pull'
+alias gd='git diff'
+alias gP='git push -U origin HEAD'
+alias ga='git add -p .'
+alias gcm='git commit -m'
+alias gco='git checkout'
+
 # == TMUX ==================================================================== #
 
 # Capture the window name before tmux sees the Codex process. The subshell keeps
